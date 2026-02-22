@@ -1,0 +1,38 @@
+# ─── Overall ─────────────────────────────────────────────────────────────────
+Guidelines.md
+
+# ─── Terraform ───────────────────────────────────────────────────────────────
+
+# Local .terraform directory (provider binaries, module cache)
+.terraform/
+
+# State files — never commit these (may contain sensitive data)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Variable files that contain real secrets
+terraform.tfvars
+*.auto.tfvars
+
+# Override files (local development overrides)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform plan output files
+*.tfplan
+
+# ─── OS / Editor ─────────────────────────────────────────────────────────────
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

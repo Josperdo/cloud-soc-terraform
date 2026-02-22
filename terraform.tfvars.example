@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Azure SOC Terraform — Example Variable Values
+#
+# Copy this file to terraform.tfvars and fill in your real values.
+# terraform.tfvars is git-ignored to prevent committing secrets.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Your Azure Subscription ID.
+# Find it with: az account show --query id -o tsv
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Short prefix for all resource names (lowercase, 2-6 chars).
+prefix = "soc"
+
+# Azure region. Run `az account list-locations -o table` for valid values.
+location = "East US"
+
+# Environment label applied as a tag to every resource.
+environment = "lab"
+
+# ── Network ──────────────────────────────────────────────────────────────────
+
+vnet_address_space     = ["10.0.0.0/16"]
+management_subnet_cidr = "10.0.1.0/24"
+workload_subnet_cidr   = "10.0.2.0/24"
+bastion_subnet_cidr    = "10.0.3.0/26" # Minimum /26 required by Azure Bastion
+
+# ── Compute ──────────────────────────────────────────────────────────────────
+
+# Cost-conscious default. Upgrade to Standard_D2s_v5 for heavier workloads.
+vm_size        = "Standard_B2s"
+admin_username = "azureadmin"
+
+# Generate with: ssh-keygen -t rsa -b 4096 -f ~/.ssh/azure_soc_key
+# Then paste the contents of ~/.ssh/azure_soc_key.pub below.
+admin_ssh_public_key = "ssh-rsa AAAA...your-public-key-here... user@host"
+
+# ── Monitoring ───────────────────────────────────────────────────────────────
+
+# 30 days is the minimum and is free-tier eligible.
+log_retention_days = 30
+
+# ── Extra Tags ───────────────────────────────────────────────────────────────
+
+tags = {
+  owner = "your-name"
+}
