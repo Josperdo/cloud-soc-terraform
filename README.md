@@ -1,5 +1,7 @@
 # Azure SOC Terraform
 
+![Terraform CI](https://github.com/Josperdo/azure-soc-terraform/actions/workflows/terraform-ci.yml/badge.svg)
+
 A cloud-native Security Operations Center (SOC) built on Microsoft Azure using Terraform. Designed as a cybersecurity portfolio project demonstrating real-world cloud security architecture, detection engineering, and DevSecOps practices.
 
 ## Project Status
@@ -19,16 +21,16 @@ Internet
    │
    │ HTTPS (443) only
    ▼
-┌──────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────────┐
 │                  Azure Virtual Network                │
 │                  10.0.0.0/16                          │
 │                                                       │
-│  ┌─────────────────────┐   ┌──────────────────────┐  │
-│  │  AzureBastionSubnet │   │  management-subnet   │  │
-│  │  10.0.3.0/26        │   │  10.0.1.0/24         │  │
-│  │                     │   │                      │  │
-│  │  [Azure Bastion]────┼───┼──► SSH (port 22)     │  │
-│  └─────────────────────┘   └──────────────────────┘  │
+│  ┌─────────────────────┐   ┌──────────────────────┐   │
+│  │  AzureBastionSubnet │   │  management-subnet   │   │
+│  │  10.0.3.0/26        │   │  10.0.1.0/24         │   │
+│  │                     │   │                      │   │
+│  │  [Azure Bastion]────┼───┼──► SSH (port 22)     │   │
+│  └─────────────────────┘   └──────────────────────┘   │
 │                                      │                │
 │                             ┌────────▼─────────────┐  │
 │                             │  workload-subnet     │  │
@@ -41,7 +43,7 @@ Internet
 │                             └──────────┬───────────┘  │
 └────────────────────────────────────────┼──────────────┘
                                          │ Syslog (DCR)
-                              ┌──────────▼───────────────┐
+                              ┌──────────▼────────────────┐
                               │  Log Analytics Workspace  │
                               │  + Microsoft Sentinel     │
                               └───────────────────────────┘
