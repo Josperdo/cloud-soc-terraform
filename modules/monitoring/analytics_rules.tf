@@ -31,8 +31,8 @@ resource "azurerm_sentinel_alert_rule_scheduled" "ssh_brute_force" {
     | project TimeGenerated, HostIP, attempt_count
   EOT
 
-  query_frequency  = "PT5M"
-  query_period     = "PT5M"
+  query_frequency   = "PT5M"
+  query_period      = "PT5M"
   trigger_operator  = "GreaterThan"
   trigger_threshold = 0
 
@@ -61,8 +61,8 @@ resource "azurerm_sentinel_alert_rule_scheduled" "sudo_group_add" {
     | project TimeGenerated, Computer, HostIP, SyslogMessage
   EOT
 
-  query_frequency  = "PT5M"
-  query_period     = "PT5M"
+  query_frequency   = "PT5M"
+  query_period      = "PT5M"
   trigger_operator  = "GreaterThan"
   trigger_threshold = 0
 
@@ -93,8 +93,8 @@ resource "azurerm_sentinel_alert_rule_scheduled" "cron_persistence" {
     | project TimeGenerated, Computer, HostIP, SyslogMessage
   EOT
 
-  query_frequency  = "PT5M"
-  query_period     = "PT5M"
+  query_frequency   = "PT5M"
+  query_period      = "PT5M"
   trigger_operator  = "GreaterThan"
   trigger_threshold = 0
 
