@@ -10,7 +10,7 @@ A cloud-native Security Operations Center (SOC) built on Microsoft Azure using T
 |---|---|---|
 | **Phase 1** | Secure cloud infrastructure (IaC foundation) | Complete |
 | **Phase 2** | Detection engineering — KQL rules + attack simulation | Planned |
-| **Phase 3** | CI/CD pipeline — automated IaC validation + security scanning | Planned |
+| **Phase 3** | CI/CD pipeline — automated IaC validation + security scanning | Complete |
 
 ---
 
