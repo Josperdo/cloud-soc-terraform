@@ -16,8 +16,8 @@ resource "azurerm_network_interface" "this" {
 
 # ─── Linux Virtual Machine ───────────────────────────────────────────────────
 
-#checkov:skip=CKV_AZURE_50:AMA extension is intentionally installed — required for the Sentinel/Log Analytics monitoring pipeline
 resource "azurerm_linux_virtual_machine" "this" {
+  #checkov:skip=CKV_AZURE_50:AMA extension is intentionally installed — required for the Sentinel/Log Analytics monitoring pipeline
   name                            = var.vm_name
   location                        = var.location
   resource_group_name             = var.resource_group_name
