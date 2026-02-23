@@ -1,0 +1,63 @@
+name: Terraform CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # ─── Format + Validate ───────────────────────────────────────────────────────
+  validate:
+    name: Format & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.5"
+
+      # Cache provider plugins — azurerm is ~300 MB, saves 2-3 min per run.
+      # Falls back to providers.tf hash before lock file exists on first run.
+      - name: Cache Terraform providers
+        uses: actions/cache@v4
+        with:
+          path: .terraform
+          key: terraform-${{ hashFiles('.terraform.lock.hcl', 'providers.tf') }}
+          restore-keys: terraform-
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      # -backend=false skips state backend auth — no Azure credentials needed
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  # ─── Security Scan ───────────────────────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          soft_fail: false        # PR fails on HIGH or CRITICAL findings
+
+      - name: Run checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          soft_fail: false
+          quiet: true             # Only print failed checks
