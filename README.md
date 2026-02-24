@@ -1,16 +1,18 @@
-# Azure SOC Terraform
+# Azure SOC Lab — Infrastructure as Code
 
 ![Terraform CI](https://github.com/Josperdo/azure-soc-terraform/actions/workflows/terraform-ci.yml/badge.svg)
 
-A cloud-native Security Operations Center (SOC) built on Microsoft Azure using Terraform. Designed as a cybersecurity portfolio project demonstrating real-world cloud security architecture, detection engineering, and DevSecOps practices.
+Modular Terraform deployment for an Azure-based Security Operations Center (SOC) lab environment. Built as a portfolio project demonstrating cloud security architecture, detection engineering, and DevSecOps practices on Microsoft Azure.
 
-## Project Status
+## What This Deploys
 
-| Phase | Scope | Status |
-|---|---|---|
-| **Phase 1** | Secure cloud infrastructure (IaC foundation) | Complete |
-| **Phase 2** | Detection engineering — KQL rules + attack simulation | Planned |
-| **Phase 3** | CI/CD pipeline — automated IaC validation + security scanning | Complete |
+- **Isolated Virtual Network** — three segmented subnets with least-privilege NSG rules
+- **Azure Bastion** — browser-based SSH access with no public IP on any VM
+- **Ubuntu 22.04 LTS Workload VM** — hardened target for attack simulation
+- **Log Analytics Workspace** — centralized syslog collection and KQL querying
+- **Microsoft Sentinel** — cloud-native SIEM with three scheduled analytics rules
+- **Detection Rules (KQL)** — SSH brute force, privilege escalation, and cron persistence mapped to MITRE ATT&CK
+- **Data Collection Rule + Azure Monitor Agent** — automated log forwarding from VM to Sentinel using managed identity
 
 ---
 
@@ -49,66 +51,51 @@ Internet
                               └───────────────────────────┘
 ```
 
-### What's Deployed
+### Resources Deployed
 
 | Resource | Purpose |
 |---|---|
 | Resource Group | Logical container for all lab resources |
 | Virtual Network | Isolated network with three segmented subnets |
 | NSGs (x3) | Least-privilege inbound/outbound rules per subnet |
-| Azure Bastion | Secure browser-based SSH access — no public VM IP |
-| Ubuntu 22.04 LTS VM | Workload target for future attack simulation |
+| Azure Bastion | Secure browser-based SSH — no public VM IP |
+| Ubuntu 22.04 LTS VM | Workload target for attack simulation |
 | System-Assigned Identity | Passwordless Azure authentication for the VM |
 | Boot Diagnostics | Serial console access and startup logging |
 | Log Analytics Workspace | Centralized log collection and querying |
-| Microsoft Sentinel | SIEM/SOAR platform (analytics configured in Phase 2) |
+| Microsoft Sentinel | SIEM/SOAR platform with scheduled analytics rules |
 | Data Collection Rule | Routes Linux syslog from VM to the workspace |
-| Azure Monitor Agent | Installed on VM; uses managed identity to ship logs |
+| Azure Monitor Agent | Ships logs using managed identity — no stored credentials |
 
 ### Security Controls
 
 - **No public IP on any VM** — access exclusively via Azure Bastion
-- **No inbound SSH from the internet** — NSGs explicitly deny `Internet` → workload/management subnets
+- **No inbound SSH from the internet** — NSGs explicitly deny `Internet` source
 - **Subnet segmentation** — management and workload subnets have separate NSGs
-- **Azure Bastion NSG** — implements all Microsoft-required rules for Bastion to function
 - **Managed identity on VM** — eliminates stored credentials for Azure API access
 - **SSH key-only authentication** — password authentication disabled on the VM
 
 ---
 
-## Project Structure
+## Use Case
 
-```
-azure-soc-terraform/
-├── main.tf                      # Root module — wires all child modules together
-├── variables.tf                 # Root input variables
-├── outputs.tf                   # Root outputs
-├── providers.tf                 # Terraform and AzureRM provider configuration
-├── terraform.tfvars.example     # Example variable values (copy → terraform.tfvars)
-├── .gitignore
-├── README.md
-└── modules/
-    ├── resource_group/
-    │   ├── main.tf              # azurerm_resource_group
-    │   ├── variables.tf
-    │   └── outputs.tf
-    ├── network/
-    │   ├── main.tf              # VNet, 3 subnets, 3 NSGs + associations
-    │   ├── variables.tf
-    │   └── outputs.tf
-    ├── compute/
-    │   ├── main.tf              # NIC, Linux VM, managed identity, boot diagnostics
-    │   ├── variables.tf
-    │   └── outputs.tf
-    ├── bastion/
-    │   ├── main.tf              # Public IP (Standard), Azure Bastion host
-    │   ├── variables.tf
-    │   └── outputs.tf
-    └── monitoring/
-        ├── main.tf              # Log Analytics Workspace, Sentinel, AMA, DCR + association
-        ├── variables.tf
-        └── outputs.tf
-```
+This lab is designed for security practitioners who want to:
+
+- Practice detection engineering against a realistic Azure target environment
+- Learn how Azure Monitor, Log Analytics, and Sentinel fit together end-to-end
+- Build and validate KQL detection rules mapped to MITRE ATT&CK
+- Demonstrate cloud security skills with a deployable, documented portfolio project
+
+---
+
+## What You'll Learn
+
+| Skill | How It's Demonstrated |
+|---|---|
+| Infrastructure as Code | Modular Terraform, azurerm provider ~4.0, reusable child modules |
+| Cloud Security Architecture | Bastion, NSGs, no public IPs, managed identity, subnet segmentation |
+| Detection Engineering | KQL rules for T1110 / T1548 / T1053, validated against real syslog data |
+| DevSecOps | GitHub Actions CI — `fmt`, `validate`, tfsec, and checkov on every PR |
 
 ---
 
@@ -120,16 +107,10 @@ azure-soc-terraform/
 | Azure CLI | Latest | [Install](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) |
 | Azure Subscription | — | Contributor or Owner role required |
 
-### Required Azure Resource Providers
-
-The following providers must be registered on your subscription (Terraform will attempt this automatically if your account has permission):
+The following Azure resource providers must be registered (Terraform will attempt this automatically):
 
 ```
-Microsoft.Compute
-Microsoft.Network
-Microsoft.OperationalInsights
-Microsoft.SecurityInsights
-Microsoft.Insights
+Microsoft.Compute / Microsoft.Network / Microsoft.OperationalInsights / Microsoft.SecurityInsights / Microsoft.Insights
 ```
 
 Register manually if needed:
@@ -141,196 +122,97 @@ az provider register --namespace Microsoft.Insights
 
 ---
 
-## Deployment
+## Quick Start
 
-### 1. Authenticate to Azure
+**1. Authenticate**
 
 ```bash
 az login
 az account set --subscription "<your-subscription-id>"
 ```
 
-### 2. Generate an SSH Key Pair
+**2. Generate an SSH key pair**
 
 ```bash
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/azure_soc_key
 ```
 
-Keep `azure_soc_key` (private key) secure. You will paste the contents of `azure_soc_key.pub` into your `terraform.tfvars`.
-
-### 3. Configure Variables
+**3. Configure variables**
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edit `terraform.tfvars` and set at minimum:
-
-- `subscription_id` — your Azure Subscription ID (`az account show --query id -o tsv`)
+Edit `terraform.tfvars` and set:
+- `subscription_id` — run `az account show --query id -o tsv`
 - `admin_ssh_public_key` — contents of `~/.ssh/azure_soc_key.pub`
 
-### 4. Initialize Terraform
+**4. Deploy**
 
 ```bash
 terraform init
-```
-
-This downloads the AzureRM provider (~4.0) and sets up the module cache.
-
-### 5. Review the Plan
-
-```bash
 terraform plan -out=soc.tfplan
-```
-
-Review the output carefully. Expect approximately **18-20 resources** to be created.
-
-### 6. Apply
-
-```bash
 terraform apply soc.tfplan
 ```
 
-Deployment takes approximately **8-12 minutes** (Azure Bastion provisioning is the longest step).
+Deployment takes approximately **8–12 minutes** (Bastion provisioning is the longest step). Expect **~20 resources** created.
 
-### 7. Connect to the VM
+**5. Connect to the VM**
 
 1. Open the [Azure Portal](https://portal.azure.com)
-2. Navigate to your resource group → the VM → **Connect → Bastion**
+2. Navigate to your resource group → VM → **Connect → Bastion**
 3. Enter the admin username (default: `azureadmin`) and your SSH private key
-4. Click **Connect**
 
----
-
-## Key Outputs
-
-After `terraform apply`, the following values are printed:
-
-| Output | Description |
-|---|---|
-| `resource_group_name` | Resource group containing all lab resources |
-| `vm_private_ip` | Private IP of the workload VM |
-| `vm_principal_id` | Object ID of the VM's managed identity (for RBAC assignments) |
-| `bastion_name` | Name of the Azure Bastion host |
-| `log_analytics_workspace_id` | Resource ID of the Log Analytics workspace |
-| `sentinel_workspace_id` | Same workspace where Sentinel is enabled |
-
----
-
-## Cost Estimate
-
-| Resource | Approximate Cost |
-|---|---|
-| Standard_B2s VM (running 24/7) | ~$30/month |
-| Azure Bastion Basic SKU | ~$140/month |
-| Log Analytics (30-day retention, minimal ingestion) | ~$2–5/month |
-| Public IP (Standard) | ~$4/month |
-| VNet, NSGs, Managed Identity | Free |
-
-> **Tip:** Stop the VM when not in use to avoid compute charges. The Bastion host is the largest recurring cost — consider destroying the entire environment with `terraform destroy` between lab sessions.
-
----
-
-## Cleanup
+**6. Tear down**
 
 ```bash
 terraform destroy
 ```
 
-This removes all resources in the correct dependency order.
-
 ---
 
-## Phase 2 — Detection Engineering
+## Key Outputs
 
-> Goal: Prove the monitoring pipeline works by writing real detection rules, triggering them with simulated attacks, and capturing evidence in Sentinel.
-
-### Deliverables
-
-**2a. Sentinel Scheduled Query Rules (KQL)**
-
-Three Terraform-managed detection rules targeting realistic Linux attack patterns:
-
-| Rule | MITRE Technique | What It Detects |
-|---|---|---|
-| SSH Brute Force | T1110.001 — Brute Force | 5+ failed SSH auth attempts from the same source IP within 5 minutes |
-| Privilege Escalation via Sudo | T1548.003 — Sudo | A user added to the `sudo` or `wheel` group |
-| Persistence via Cron | T1053.003 — Cron Job | New cron entry written by a non-root user |
-
-**2b. Attack Simulation**
-
-Using [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) on the workload VM to fire each technique above and confirm Sentinel generates an incident.
-
-**2c. Evidence**
-
-Screenshots added to `docs/screenshots/` showing:
-- Sentinel incident panel with alerts firing
-- KQL query results in Log Analytics
-- The simulated attack command that triggered each alert
-
-**2d. Sentinel Workbook**
-
-A single Terraform-managed workbook with three tiles:
-- Failed login attempts (last 24 hours)
-- Sudo group modification events
-- Cron job creation events
-
-### What This Phase Does NOT Include
-
-Keeping scope tight — the following are intentionally deferred or excluded:
-
-- ML-based analytics (requires weeks of baseline data)
-- Threat intelligence / watchlists (Phase 2+ stretch goal)
-- Key Vault (good addition but not core to detection engineering)
-- Azure Policy (operational hardening, not detection)
-
----
-
-## Phase 3 — CI/CD Pipeline (Project Complete)
-
-> Goal: Show the code is maintained like a real team project — automated checks run on every pull request so no broken or insecure Terraform ever merges.
-
-### Deliverables
-
-**3a. GitHub Actions Workflow** (`.github/workflows/terraform-ci.yml`)
-
-Triggered on every pull request to `main`:
-
-| Step | Tool | What It Checks |
-|---|---|---|
-| Format | `terraform fmt -check` | Code is consistently formatted |
-| Validate | `terraform validate` | HCL syntax is valid |
-| Security scan | `tfsec` or `checkov` | No high/critical IaC misconfigurations |
-
-**3b. README Badge**
-
-A GitHub Actions status badge at the top of the README so visitors can see the pipeline is green.
-
-**3c. Final Documentation Pass**
-
-- Architecture diagram image (`docs/architecture.png`) replacing the ASCII diagram
-- A "How to contribute / fork this for your own lab" section
-- Confirmed working deployment instructions with real output screenshots
-
-### Why This Is the Finish Line
-
-After Phase 3, the project demonstrates:
-
-| Skill | Evidence |
+| Output | Description |
 |---|---|
-| Infrastructure as Code | Modular Terraform, azurerm provider, state management |
-| Cloud Security Architecture | Bastion, NSGs, no public IPs, managed identity |
-| Detection Engineering | KQL rules mapped to MITRE ATT&CK, proven with simulation |
-| DevSecOps | CI/CD pipeline with automated IaC security scanning |
+| `resource_group_name` | Resource group containing all lab resources |
+| `vm_private_ip` | Private IP of the workload VM |
+| `vm_principal_id` | Object ID of the VM's managed identity |
+| `bastion_name` | Name of the Azure Bastion host |
+| `log_analytics_workspace_id` | Resource ID of the Log Analytics workspace |
+| `sentinel_workspace_id` | Workspace where Sentinel is enabled |
 
-That combination covers what cloud security, SOC engineer, and detection engineer job descriptions actually ask for.
+---
+
+## Cost Estimate
+
+| Resource | Approximate Monthly Cost |
+|---|---|
+| Azure Bastion Basic SKU | ~$140 |
+| Standard_B2s VM (running 24/7) | ~$30 |
+| Public IP (Standard) | ~$4 |
+| Log Analytics (30-day retention, minimal ingestion) | ~$2–5 |
+| VNet, NSGs, Managed Identity | Free |
+
+> **Tip:** Bastion is the dominant cost at ~$0.19/hr. Destroy the environment between lab sessions with `terraform destroy` to avoid idle charges.
+
+---
+
+## Contributing
+
+Pull requests welcome. Useful areas for contribution:
+
+- Additional KQL detection rules mapped to MITRE ATT&CK
+- Sentinel workbook for visualising detection coverage
+- Terraform remote state configuration (Azure Blob backend)
+- Additional attack simulation playbooks
 
 ---
 
 ## References
 
-- [Azure Bastion NSG Requirements](https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg)
 - [Microsoft Sentinel Documentation](https://learn.microsoft.com/en-us/azure/sentinel/)
+- [Azure Bastion NSG Requirements](https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg)
 - [Azure Monitor Agent Overview](https://learn.microsoft.com/en-us/azure/azure-monitor/agents/azure-monitor-agent-overview)
 - [Terraform AzureRM Provider](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
 - [MITRE ATT&CK Framework](https://attack.mitre.org/)
