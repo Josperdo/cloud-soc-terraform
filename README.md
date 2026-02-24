@@ -4,16 +4,6 @@
 
 A cloud-native Security Operations Center (SOC) built on Microsoft Azure using Terraform. Designed as a cybersecurity portfolio project demonstrating real-world cloud security architecture, detection engineering, and DevSecOps practices.
 
-## Project Status
-
-| Phase | Scope | Status |
-|---|---|---|
-| **Phase 1** | Secure cloud infrastructure (IaC foundation) | Complete |
-| **Phase 2** | Detection engineering — KQL rules + attack simulation | Planned |
-| **Phase 3** | CI/CD pipeline — automated IaC validation + security scanning | Complete |
-
----
-
 ## Architecture Overview
 
 ```
@@ -57,13 +47,15 @@ Internet
 | Virtual Network | Isolated network with three segmented subnets |
 | NSGs (x3) | Least-privilege inbound/outbound rules per subnet |
 | Azure Bastion | Secure browser-based SSH access — no public VM IP |
-| Ubuntu 22.04 LTS VM | Workload target for future attack simulation |
+| Ubuntu 22.04 LTS VM | Workload target for attack simulation |
 | System-Assigned Identity | Passwordless Azure authentication for the VM |
 | Boot Diagnostics | Serial console access and startup logging |
 | Log Analytics Workspace | Centralized log collection and querying |
-| Microsoft Sentinel | SIEM/SOAR platform (analytics configured in Phase 2) |
+| Microsoft Sentinel | SIEM/SOAR platform with 10 active detection rules |
 | Data Collection Rule | Routes Linux syslog from VM to the workspace |
 | Azure Monitor Agent | Installed on VM; uses managed identity to ship logs |
+| Sentinel Analytics Rules (x10) | MITRE ATT&CK-mapped KQL detection rules |
+| SOC Detection Dashboard | Azure Monitor Workbook with 3 KQL query tiles |
 
 ### Security Controls
 
@@ -87,6 +79,11 @@ azure-soc-terraform/
 ├── terraform.tfvars.example     # Example variable values (copy → terraform.tfvars)
 ├── .gitignore
 ├── README.md
+├── docs/
+│   ├── lab-guide.md             # Step-by-step learning guide with architecture deep-dives
+│   ├── attack-simulation.md     # Exact commands to trigger each detection rule
+│   ├── kql-reference.md         # All 10 KQL rules explained with tuning guidance
+│   └── troubleshooting.md       # Common deployment and monitoring issues
 └── modules/
     ├── resource_group/
     │   ├── main.tf              # azurerm_resource_group
@@ -106,9 +103,38 @@ azure-soc-terraform/
     │   └── outputs.tf
     └── monitoring/
         ├── main.tf              # Log Analytics Workspace, Sentinel, AMA, DCR + association
+        ├── analytics_rules.tf   # 10 Sentinel Scheduled Query Rules (MITRE ATT&CK mapped)
+        ├── workbook.tf          # SOC Detection Dashboard workbook
         ├── variables.tf
         └── outputs.tf
 ```
+
+---
+
+## Learning Guide
+
+New to this lab? Start here:
+
+| Document | What it covers |
+|----------|---------------|
+| [docs/lab-guide.md](docs/lab-guide.md) | Full walkthrough — architecture decisions, Terraform module deep-dive, monitoring pipeline, detection engineering 101, and what to explore next |
+| [docs/attack-simulation.md](docs/attack-simulation.md) | Exact bash commands to trigger each of the 10 detection rules and verify incidents in Sentinel |
+| [docs/kql-reference.md](docs/kql-reference.md) | Every KQL query explained — which fields it uses, how to tune it, and known false positives |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common deployment, monitoring, and Sentinel issues with root causes and fixes |
+
+---
+
+## Fork This Repo
+
+1. Click **Fork** on GitHub → clone your fork locally
+2. Copy the example vars file: `cp terraform.tfvars.example terraform.tfvars`
+3. Set at minimum: `subscription_id` and `admin_ssh_public_key`
+4. Optionally change `prefix` (2–6 lowercase characters) so your resource names don't conflict with anyone else's
+5. Run `terraform init && terraform plan` to preview, then `terraform apply` to deploy
+
+**Cost tip:** Azure Bastion is the largest cost (~$140/month). Run `terraform destroy` between sessions — re-deploying takes about 10 minutes.
+
+See [docs/lab-guide.md](docs/lab-guide.md) for a full walkthrough including what's safe to customize and what to leave alone.
 
 ---
 
@@ -183,7 +209,7 @@ This downloads the AzureRM provider (~4.0) and sets up the module cache.
 terraform plan -out=soc.tfplan
 ```
 
-Review the output carefully. Expect approximately **18-20 resources** to be created.
+Review the output carefully. Expect approximately **33 resources** to be created.
 
 ### 6. Apply
 
@@ -238,92 +264,6 @@ terraform destroy
 ```
 
 This removes all resources in the correct dependency order.
-
----
-
-## Phase 2 — Detection Engineering
-
-> Goal: Prove the monitoring pipeline works by writing real detection rules, triggering them with simulated attacks, and capturing evidence in Sentinel.
-
-### Deliverables
-
-**2a. Sentinel Scheduled Query Rules (KQL)**
-
-Three Terraform-managed detection rules targeting realistic Linux attack patterns:
-
-| Rule | MITRE Technique | What It Detects |
-|---|---|---|
-| SSH Brute Force | T1110.001 — Brute Force | 5+ failed SSH auth attempts from the same source IP within 5 minutes |
-| Privilege Escalation via Sudo | T1548.003 — Sudo | A user added to the `sudo` or `wheel` group |
-| Persistence via Cron | T1053.003 — Cron Job | New cron entry written by a non-root user |
-
-**2b. Attack Simulation**
-
-Using [Atomic Red Team](https://github.com/redcanaryco/atomic-red-team) on the workload VM to fire each technique above and confirm Sentinel generates an incident.
-
-**2c. Evidence**
-
-Screenshots added to `docs/screenshots/` showing:
-- Sentinel incident panel with alerts firing
-- KQL query results in Log Analytics
-- The simulated attack command that triggered each alert
-
-**2d. Sentinel Workbook**
-
-A single Terraform-managed workbook with three tiles:
-- Failed login attempts (last 24 hours)
-- Sudo group modification events
-- Cron job creation events
-
-### What This Phase Does NOT Include
-
-Keeping scope tight — the following are intentionally deferred or excluded:
-
-- ML-based analytics (requires weeks of baseline data)
-- Threat intelligence / watchlists (Phase 2+ stretch goal)
-- Key Vault (good addition but not core to detection engineering)
-- Azure Policy (operational hardening, not detection)
-
----
-
-## Phase 3 — CI/CD Pipeline (Project Complete)
-
-> Goal: Show the code is maintained like a real team project — automated checks run on every pull request so no broken or insecure Terraform ever merges.
-
-### Deliverables
-
-**3a. GitHub Actions Workflow** (`.github/workflows/terraform-ci.yml`)
-
-Triggered on every pull request to `main`:
-
-| Step | Tool | What It Checks |
-|---|---|---|
-| Format | `terraform fmt -check` | Code is consistently formatted |
-| Validate | `terraform validate` | HCL syntax is valid |
-| Security scan | `tfsec` or `checkov` | No high/critical IaC misconfigurations |
-
-**3b. README Badge**
-
-A GitHub Actions status badge at the top of the README so visitors can see the pipeline is green.
-
-**3c. Final Documentation Pass**
-
-- Architecture diagram image (`docs/architecture.png`) replacing the ASCII diagram
-- A "How to contribute / fork this for your own lab" section
-- Confirmed working deployment instructions with real output screenshots
-
-### Why This Is the Finish Line
-
-After Phase 3, the project demonstrates:
-
-| Skill | Evidence |
-|---|---|
-| Infrastructure as Code | Modular Terraform, azurerm provider, state management |
-| Cloud Security Architecture | Bastion, NSGs, no public IPs, managed identity |
-| Detection Engineering | KQL rules mapped to MITRE ATT&CK, proven with simulation |
-| DevSecOps | CI/CD pipeline with automated IaC security scanning |
-
-That combination covers what cloud security, SOC engineer, and detection engineer job descriptions actually ask for.
 
 ---
 
