@@ -336,7 +336,8 @@ This simulates an attacker changing an account's password after compromising it,
 sudo useradd -m sim-victim
 
 # Change their password (this is the trigger)
-echo "sim-victim:NewP@ssw0rd!" | sudo chpasswd
+# Use any password — the value itself doesn't matter for the detection
+echo "sim-victim:<any-password>" | sudo chpasswd
 echo "Password changed. Check Sentinel in 5-10 minutes."
 ```
 
