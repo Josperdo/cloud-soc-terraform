@@ -77,3 +77,8 @@ output "sentinel_workspace_id" {
   description = "Log Analytics workspace ID where Microsoft Sentinel is enabled."
   value       = module.monitoring.workspace_id
 }
+
+output "soc_dashboard_workbook_id" {
+  description = "Resource ID of the SOC Detection Dashboard workbook in Sentinel."
+  value       = module.monitoring.workbook_id
+}

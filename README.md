@@ -4,6 +4,7 @@
 
 Modular Terraform deployment for an Azure-based Security Operations Center (SOC) lab environment. Built as a portfolio project demonstrating cloud security architecture, detection engineering, and DevSecOps practices on Microsoft Azure.
 
+<<<<<<< HEAD
 ## What This Deploys
 
 - **Isolated Virtual Network** — three segmented subnets with least-privilege NSG rules
@@ -16,6 +17,8 @@ Modular Terraform deployment for an Azure-based Security Operations Center (SOC)
 
 ---
 
+=======
+>>>>>>> 4cc058b69282209f5b674d674c633d8bf1235679
 ## Architecture Overview
 
 ```
@@ -58,14 +61,26 @@ Internet
 | Resource Group | Logical container for all lab resources |
 | Virtual Network | Isolated network with three segmented subnets |
 | NSGs (x3) | Least-privilege inbound/outbound rules per subnet |
+<<<<<<< HEAD
 | Azure Bastion | Secure browser-based SSH — no public VM IP |
+=======
+| Azure Bastion | Secure browser-based SSH access — no public VM IP |
+>>>>>>> 4cc058b69282209f5b674d674c633d8bf1235679
 | Ubuntu 22.04 LTS VM | Workload target for attack simulation |
 | System-Assigned Identity | Passwordless Azure authentication for the VM |
 | Boot Diagnostics | Serial console access and startup logging |
 | Log Analytics Workspace | Centralized log collection and querying |
+<<<<<<< HEAD
 | Microsoft Sentinel | SIEM/SOAR platform with scheduled analytics rules |
 | Data Collection Rule | Routes Linux syslog from VM to the workspace |
 | Azure Monitor Agent | Ships logs using managed identity — no stored credentials |
+=======
+| Microsoft Sentinel | SIEM/SOAR platform with 10 active detection rules |
+| Data Collection Rule | Routes Linux syslog from VM to the workspace |
+| Azure Monitor Agent | Installed on VM; uses managed identity to ship logs |
+| Sentinel Analytics Rules (x10) | MITRE ATT&CK-mapped KQL detection rules |
+| SOC Detection Dashboard | Azure Monitor Workbook with 3 KQL query tiles |
+>>>>>>> 4cc058b69282209f5b674d674c633d8bf1235679
 
 ### Security Controls
 
@@ -79,6 +94,7 @@ Internet
 
 ## Use Case
 
+<<<<<<< HEAD
 This lab is designed for security practitioners who want to:
 
 - Practice detection engineering against a realistic Azure target environment
@@ -96,6 +112,73 @@ This lab is designed for security practitioners who want to:
 | Cloud Security Architecture | Bastion, NSGs, no public IPs, managed identity, subnet segmentation |
 | Detection Engineering | KQL rules for T1110 / T1548 / T1053, validated against real syslog data |
 | DevSecOps | GitHub Actions CI — `fmt`, `validate`, tfsec, and checkov on every PR |
+=======
+```
+azure-soc-terraform/
+├── main.tf                      # Root module — wires all child modules together
+├── variables.tf                 # Root input variables
+├── outputs.tf                   # Root outputs
+├── providers.tf                 # Terraform and AzureRM provider configuration
+├── terraform.tfvars.example     # Example variable values (copy → terraform.tfvars)
+├── .gitignore
+├── README.md
+├── docs/
+│   ├── lab-guide.md             # Step-by-step learning guide with architecture deep-dives
+│   ├── attack-simulation.md     # Exact commands to trigger each detection rule
+│   ├── kql-reference.md         # All 10 KQL rules explained with tuning guidance
+│   └── troubleshooting.md       # Common deployment and monitoring issues
+└── modules/
+    ├── resource_group/
+    │   ├── main.tf              # azurerm_resource_group
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── network/
+    │   ├── main.tf              # VNet, 3 subnets, 3 NSGs + associations
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── compute/
+    │   ├── main.tf              # NIC, Linux VM, managed identity, boot diagnostics
+    │   ├── variables.tf
+    │   └── outputs.tf
+    ├── bastion/
+    │   ├── main.tf              # Public IP (Standard), Azure Bastion host
+    │   ├── variables.tf
+    │   └── outputs.tf
+    └── monitoring/
+        ├── main.tf              # Log Analytics Workspace, Sentinel, AMA, DCR + association
+        ├── analytics_rules.tf   # 10 Sentinel Scheduled Query Rules (MITRE ATT&CK mapped)
+        ├── workbook.tf          # SOC Detection Dashboard workbook
+        ├── variables.tf
+        └── outputs.tf
+```
+>>>>>>> 4cc058b69282209f5b674d674c633d8bf1235679
+
+---
+
+## Learning Guide
+
+New to this lab? Start here:
+
+| Document | What it covers |
+|----------|---------------|
+| [docs/lab-guide.md](docs/lab-guide.md) | Full walkthrough — architecture decisions, Terraform module deep-dive, monitoring pipeline, detection engineering 101, and what to explore next |
+| [docs/attack-simulation.md](docs/attack-simulation.md) | Exact bash commands to trigger each of the 10 detection rules and verify incidents in Sentinel |
+| [docs/kql-reference.md](docs/kql-reference.md) | Every KQL query explained — which fields it uses, how to tune it, and known false positives |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Common deployment, monitoring, and Sentinel issues with root causes and fixes |
+
+---
+
+## Fork This Repo
+
+1. Click **Fork** on GitHub → clone your fork locally
+2. Copy the example vars file: `cp terraform.tfvars.example terraform.tfvars`
+3. Set at minimum: `subscription_id` and `admin_ssh_public_key`
+4. Optionally change `prefix` (2–6 lowercase characters) so your resource names don't conflict with anyone else's
+5. Run `terraform init && terraform plan` to preview, then `terraform apply` to deploy
+
+**Cost tip:** Azure Bastion is the largest cost (~$140/month). Run `terraform destroy` between sessions — re-deploying takes about 10 minutes.
+
+See [docs/lab-guide.md](docs/lab-guide.md) for a full walkthrough including what's safe to customize and what to leave alone.
 
 ---
 
@@ -152,6 +235,16 @@ Edit `terraform.tfvars` and set:
 ```bash
 terraform init
 terraform plan -out=soc.tfplan
+<<<<<<< HEAD
+=======
+```
+
+Review the output carefully. Expect approximately **33 resources** to be created.
+
+### 6. Apply
+
+```bash
+>>>>>>> 4cc058b69282209f5b674d674c633d8bf1235679
 terraform apply soc.tfplan
 ```
 
@@ -171,6 +264,7 @@ terraform destroy
 
 ---
 
+<<<<<<< HEAD
 ## Key Outputs
 
 | Output | Description |
@@ -209,6 +303,8 @@ Pull requests welcome. Useful areas for contribution:
 
 ---
 
+=======
+>>>>>>> 4cc058b69282209f5b674d674c633d8bf1235679
 ## References
 
 - [Microsoft Sentinel Documentation](https://learn.microsoft.com/en-us/azure/sentinel/)
