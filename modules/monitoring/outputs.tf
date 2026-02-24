@@ -18,7 +18,4 @@ output "dcr_id" {
   value       = azurerm_monitor_data_collection_rule.linux_syslog.id
 }
 
-output "workbook_id" {
-  description = "Resource ID of the SOC Detection Dashboard workbook."
-  value       = azurerm_application_insights_workbook.soc_dashboard.id
-}
+# workbook_id output added here once modules/monitoring/workbook.tf is created

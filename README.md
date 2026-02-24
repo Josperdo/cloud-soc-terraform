@@ -4,14 +4,6 @@
 
 Modular Terraform deployment for an Azure-based Security Operations Center (SOC) lab environment. Built as a portfolio project demonstrating cloud security architecture, detection engineering, and DevSecOps practices on Microsoft Azure.
 
-## Project Status
-
-| Phase | Scope | Status |
-|---|---|---|
-| **Phase 1** | Secure cloud infrastructure — network, compute, Bastion, monitoring pipeline | Complete |
-| **Phase 2** | Detection engineering — KQL analytics rules + attack simulation + evidence | In Progress |
-| **Phase 3** | DevSecOps — CI/CD pipeline with automated IaC validation and security scanning | Complete |
-
 ---
 
 ## What This Deploys
@@ -205,7 +197,9 @@ terraform destroy
 | Log Analytics (30-day retention, minimal ingestion) | ~$2–5 |
 | VNet, NSGs, Managed Identity | Free |
 
-> **Tip:** Bastion is the dominant cost at ~$0.19/hr. Destroy the environment between lab sessions with `terraform destroy` to avoid idle charges.
+Running this lab costs approximately **$5–6/day** if left on 24/7 (Bastion is the dominant cost). For a trial session of a few hours the cost is under $2.
+
+> **Tip:** Run `terraform destroy` between lab sessions — re-deploying takes about 10 minutes and saves ~$4.60/day in idle Bastion charges.
 
 ---
 
@@ -217,6 +211,12 @@ Pull requests welcome. Useful areas for contribution:
 - Sentinel workbook for visualising detection coverage
 - Terraform remote state configuration (Azure Blob backend)
 - Additional attack simulation playbooks
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE). Feel free to fork and adapt for your own lab environment.
 
 ---
 

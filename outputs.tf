@@ -78,7 +78,4 @@ output "sentinel_workspace_id" {
   value       = module.monitoring.workspace_id
 }
 
-output "soc_dashboard_workbook_id" {
-  description = "Resource ID of the SOC Detection Dashboard workbook in Sentinel."
-  value       = module.monitoring.workbook_id
-}
+# soc_dashboard_workbook_id output added here once modules/monitoring/workbook.tf is created
