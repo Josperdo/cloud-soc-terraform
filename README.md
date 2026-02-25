@@ -15,6 +15,9 @@ Modular Terraform deployment for an Azure-based Security Operations Center (SOC)
 - **Microsoft Sentinel** — cloud-native SIEM with 10 scheduled analytics rules
 - **Detection Rules (KQL)** — 10 MITRE ATT&CK-mapped rules covering credential access, privilege escalation, persistence, defense evasion, and execution
 - **Data Collection Rule + Azure Monitor Agent** — automated log forwarding from VM to Sentinel using managed identity
+- **cloud-init hardening** — auditd + audisp-syslog installed on first boot; kernel audit rules mapped to MITRE ATT&CK techniques
+- **Least-privilege RBAC** — VM managed identity scoped to `Monitoring Metrics Publisher` on the workspace only
+- **Azure Policy guardrail** — `Allowed locations` built-in policy enforced at resource group scope
 
 ---
 
@@ -77,6 +80,9 @@ Internet
 - **Subnet segmentation** — management and workload subnets have separate NSGs
 - **Managed identity on VM** — eliminates stored credentials for Azure API access
 - **SSH key-only authentication** — password authentication disabled on the VM
+- **auditd + audisp-syslog** — kernel-level audit rules capture privileged exec, account changes, cron/systemd persistence, and SSH config tampering; events forwarded to Sentinel via `local6` syslog facility
+- **Least-privilege RBAC** — VM identity is granted `Monitoring Metrics Publisher` scoped to the workspace only (not subscription-wide)
+- **Azure Policy guardrail** — `Allowed locations` built-in policy prevents resources from being created outside the chosen region
 
 ---
 
@@ -102,13 +108,34 @@ This lab is designed for security practitioners who want to:
 
 ---
 
+## Detection Coverage
+
+10 Sentinel scheduled analytics rules deployed via Terraform, each mapped to a MITRE ATT&CK technique and targeting the Linux syslog pipeline.
+
+| # | Rule | Technique | Tactic | Severity |
+|---|---|---|---|---|
+| 1 | SSH Brute Force | T1110.001 — Brute Force: Password Guessing | Credential Access | Medium |
+| 2 | User Added to Sudo Group | T1548.003 — Abuse Elevation Control: Sudo | Privilege Escalation | High |
+| 3 | Repeated Failed Sudo Attempts | T1548.003 — Abuse Elevation Control: Sudo | Privilege Escalation | Medium |
+| 4 | Cron Job Created by Non-Root User | T1053.003 — Scheduled Task: Cron | Persistence | Medium |
+| 5 | New Local User Account Created | T1136.001 — Create Account: Local Account | Persistence | High |
+| 6 | Account Password Changed | T1098 — Account Manipulation | Persistence | Medium |
+| 7 | New Systemd Service Installed | T1543.002 — Create/Modify System Process: Systemd | Persistence | Medium |
+| 8 | Successful Root SSH Login | T1078 — Valid Accounts | Defense Evasion / Initial Access | High |
+| 9 | Syslog Daemon Stopped or Restarted | T1070.002 — Indicator Removal: Clear Linux Logs | Defense Evasion | High |
+| 10 | Reverse Shell Indicators | T1059.004 — Command and Scripting: Unix Shell | Execution | High |
+
+All rules include entity mapping (Host + IP) so Sentinel automatically links alerts to entity timelines for one-click investigation.
+
+---
+
 ## Prerequisites
 
 | Tool | Version | Notes |
 |---|---|---|
 | Terraform | >= 1.5.0 | [Install](https://developer.hashicorp.com/terraform/install) |
 | Azure CLI | Latest | [Install](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) |
-| Azure Subscription | — | Contributor or Owner role required |
+| Azure Subscription | — | **Owner role required** (policy assignment needs Owner) |
 
 The following Azure resource providers must be registered (Terraform will attempt this automatically):
 

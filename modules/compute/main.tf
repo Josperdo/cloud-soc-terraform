@@ -24,6 +24,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   size                            = var.vm_size
   admin_username                  = var.admin_username
   disable_password_authentication = true
+  custom_data                     = base64encode(file("${path.module}/cloud-init.yaml"))
   tags                            = var.tags
 
   network_interface_ids = [

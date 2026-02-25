@@ -47,6 +47,7 @@ resource "azurerm_monitor_data_collection_rule" "linux_syslog" {
         "cron",
         "daemon",
         "kern",
+        "local6", # auditd events routed via audisp-syslog plugin
         "syslog",
         "user",
       ]
