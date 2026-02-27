@@ -216,6 +216,8 @@ terraform destroy
 
 ## Cost Estimate
 
+> **No Azure account yet?** Sign up for an [Azure free account](https://azure.microsoft.com/free/) — new accounts receive **$200 in credit** valid for 30 days. That credit is more than enough to deploy, use, and tear down this lab multiple times without spending a cent.
+
 | Resource | Approximate Monthly Cost |
 |---|---|
 | Azure Bastion Basic SKU | ~$140 |
@@ -224,7 +226,7 @@ terraform destroy
 | Log Analytics (30-day retention, minimal ingestion) | ~$2–5 |
 | VNet, NSGs, Managed Identity | Free |
 
-Running this lab costs approximately **$5–6/day** if left on 24/7 (Bastion is the dominant cost). For a trial session of a few hours the cost is under $2.
+Running this lab costs approximately **$5–6/day** if left on 24/7 (Bastion is the dominant cost). For a trial session of a few hours the cost is under $2. The $200 free trial credit covers roughly **30+ days** of continuous use.
 
 > **Tip:** Run `terraform destroy` between lab sessions — re-deploying takes about 10 minutes and saves ~$4.60/day in idle Bastion charges.
 

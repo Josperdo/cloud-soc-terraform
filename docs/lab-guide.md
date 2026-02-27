@@ -25,13 +25,13 @@ By the end of this lab you will be able to:
 |------|-----|---------|
 | Terraform >= 1.5 | Deploys all Azure resources | [hashicorp.com/terraform/install](https://developer.hashicorp.com/terraform/install) |
 | Azure CLI | Authenticates Terraform to Azure | [learn.microsoft.com](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) |
-| An Azure subscription | Hosts all resources | Free trial or pay-as-you-go |
+| An Azure subscription | Hosts all resources | [Free trial ($200 credit)](https://azure.microsoft.com/free/) or pay-as-you-go |
 | SSH key pair | Authenticates to the VM (no passwords) | `ssh-keygen -t rsa -b 4096 -f ~/.ssh/azure_soc_key` |
 | Git | Clone and fork the repo | [git-scm.com](https://git-scm.com/) |
 
 ### Azure account permissions
 
-You need **Contributor** or **Owner** on the subscription. Contributor is sufficient for all resource deployments. Owner is required only if you want to assign RBAC roles (not needed for this lab's default configuration).
+You need **Owner** on the subscription. This lab deploys an RBAC role assignment (Monitoring Metrics Publisher on the Log Analytics workspace) and an Azure Policy assignment — both require Owner. On a free trial account you are Owner of your own subscription by default, so no extra steps are needed.
 
 ### Cost estimate
 
@@ -260,7 +260,8 @@ Azure Monitor Agent (AMA)
 Data Collection Rule (DCR)
     │
     │ Defines WHICH facilities and severities to forward:
-    │   Facilities: auth, authpriv, cron, daemon, kern, syslog, user
+    │   Facilities: auth, authpriv, cron, daemon, kern, local6, syslog, user
+    │     (local6 = auditd events forwarded via audisp-syslog plugin)
     │   Severities: all (debug → emergency)
     ▼
 Log Analytics Workspace
@@ -380,7 +381,7 @@ Once you've completed the core lab, here are high-value extensions in order of c
 
 - **Run the attack simulation** — follow [docs/attack-simulation.md](attack-simulation.md) to trigger real incidents
 - **Add Key Vault** — store the SSH key in Azure Key Vault and reference it in Terraform (eliminates the tfvars with sensitive values)
-- **Add Azure Policy** — enforce that VMs must have AMA installed, NSGs must exist on subnets, etc.
+- **Extend Azure Policy** — the lab already enforces Allowed locations; add further built-in policies to require AMA on VMs, enforce NSG presence on subnets, etc.
 
 ### Advanced (1–2 days)
 

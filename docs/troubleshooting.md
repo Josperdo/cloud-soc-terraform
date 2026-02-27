@@ -15,17 +15,17 @@ Message="The client ... does not have authorization to perform action
 'Microsoft.Resources/subscriptions/resourcegroups/write'"
 ```
 
-**Root cause:** Your Azure account does not have Contributor or Owner on the subscription.
+**Root cause:** Your Azure account does not have Owner on the subscription. This lab requires Owner (not just Contributor) because it creates an RBAC role assignment and an Azure Policy assignment — both of which need Owner-level permissions. On a free trial account you are Owner by default.
 
 **Fix:**
 ```bash
 # Check your current role assignments
 az role assignment list --assignee $(az account show --query user.name -o tsv) -o table
 
-# If you need to grant yourself access (requires Owner or User Access Administrator):
+# If you need to grant yourself Owner (requires an existing Owner or User Access Administrator):
 az role assignment create \
   --assignee $(az account show --query user.name -o tsv) \
-  --role Contributor \
+  --role Owner \
   --scope /subscriptions/<your-subscription-id>
 ```
 
