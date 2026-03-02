@@ -214,6 +214,22 @@ terraform destroy
 
 ---
 
+## Troubleshooting
+
+**`SkuNotAvailable` error during VM creation**
+
+B-series VMs have capacity restrictions in some regions, especially on free trial subscriptions. Set `vm_size = "Standard_D2s_v3"` in your `terraform.tfvars` as a reliable fallback. If `East US` fails, try `location = "East US 2"`.
+
+**Sentinel 409 Conflict on redeploy**
+
+Azure soft-deletes Sentinel alert rule IDs and enforces a cooldown before reusing them. If you destroy and redeploy quickly with the same `prefix`, you will hit this. Either wait 15 minutes before redeploying, or change your `prefix` (e.g. `"lab"` instead of `"soc"`) to generate fresh resource names.
+
+**`terraform apply` fails partway through**
+
+Re-run `terraform plan -out=soc.tfplan && terraform apply soc.tfplan` — Terraform will skip what already exists and only create what failed. Most mid-deploy failures are transient Azure API timing issues that resolve on retry.
+
+---
+
 ## Cost Estimate
 
 > **No Azure account yet?** Sign up for an [Azure free account](https://azure.microsoft.com/free/) — new accounts receive **$200 in credit** valid for 30 days. That credit is more than enough to deploy, use, and tear down this lab multiple times without spending a cent.

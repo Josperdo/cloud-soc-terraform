@@ -13,7 +13,8 @@ subscription_id = "00000000-0000-0000-0000-000000000000"
 prefix = "soc"
 
 # Azure region. Run `az account list-locations -o table` for valid values.
-location = "East US"
+# Note: "East US" may have B-series VM capacity restrictions. "East US 2" is recommended.
+location = "East US 2"
 
 # Environment label applied as a tag to every resource.
 environment = "lab"
@@ -27,7 +28,9 @@ bastion_subnet_cidr    = "10.0.3.0/26" # Minimum /26 required by Azure Bastion
 
 # ── Compute ──────────────────────────────────────────────────────────────────
 
-# Cost-conscious default. Upgrade to Standard_D2s_v5 for heavier workloads.
+# Azure free trial and some PAYG subscriptions have B-series capacity restrictions.
+# If you see "SkuNotAvailable", use Standard_D2s_v3 as a reliable fallback.
+# Upgrade to Standard_D2s_v5 for heavier workloads.
 vm_size        = "Standard_B2s"
 admin_username = "azureadmin"
 
