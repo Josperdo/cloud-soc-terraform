@@ -14,7 +14,7 @@ locals {
 # ─── Resource Group ──────────────────────────────────────────────────────────
 
 module "resource_group" {
-  source   = "./modules/resource_group"
+  source   = "../../modules/azure/resource_group"
   name     = "${var.prefix}-soc-rg"
   location = var.location
   tags     = local.common_tags
@@ -23,7 +23,7 @@ module "resource_group" {
 # ─── Network ─────────────────────────────────────────────────────────────────
 
 module "network" {
-  source = "./modules/network"
+  source = "../../modules/azure/network"
 
   prefix                 = var.prefix
   location               = var.location
@@ -38,7 +38,7 @@ module "network" {
 # ─── Compute ─────────────────────────────────────────────────────────────────
 
 module "compute" {
-  source = "./modules/compute"
+  source = "../../modules/azure/compute"
 
   vm_name              = "${var.prefix}-workload-vm"
   location             = var.location
@@ -53,7 +53,7 @@ module "compute" {
 # ─── Bastion ─────────────────────────────────────────────────────────────────
 
 module "bastion" {
-  source = "./modules/bastion"
+  source = "../../modules/azure/bastion"
 
   prefix              = var.prefix
   location            = var.location
@@ -65,7 +65,7 @@ module "bastion" {
 # ─── Monitoring ──────────────────────────────────────────────────────────────
 
 module "monitoring" {
-  source = "./modules/monitoring"
+  source = "../../modules/azure/monitoring"
 
   prefix              = var.prefix
   location            = var.location

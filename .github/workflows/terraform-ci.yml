@@ -7,10 +7,15 @@ on:
     branches: [main]
 
 jobs:
-  # ─── Format + Validate ───────────────────────────────────────────────────────
+  # ─── Format + Validate (both clouds) ─────────────────────────────────────────
+  # Matrix runs azure and aws jobs in parallel — one job definition, two targets.
   validate:
-    name: Format & Validate
+    name: Validate (${{ matrix.environment }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [azure, aws]
+      fail-fast: false  # Don't cancel the other cloud if one fails
 
     steps:
       - name: Checkout
@@ -21,29 +26,35 @@ jobs:
         with:
           terraform_version: "~> 1.5"
 
-      # Cache provider plugins — azurerm is ~300 MB, saves 2-3 min per run.
-      # Falls back to providers.tf hash before lock file exists on first run.
+      # Cache provider plugins per environment — azurerm ~300 MB, aws ~100 MB.
       - name: Cache Terraform providers
         uses: actions/cache@v4
         with:
-          path: .terraform
-          key: terraform-${{ hashFiles('.terraform.lock.hcl', 'providers.tf') }}
-          restore-keys: terraform-
+          path: environments/${{ matrix.environment }}/.terraform
+          key: terraform-${{ matrix.environment }}-${{ hashFiles(format('environments/{0}/.terraform.lock.hcl', matrix.environment), format('environments/{0}/providers.tf', matrix.environment)) }}
+          restore-keys: terraform-${{ matrix.environment }}-
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
+        working-directory: .
 
-      # -backend=false skips state backend auth — no Azure credentials needed
+      # -backend=false skips state backend auth — no cloud credentials needed
       - name: Terraform Init
         run: terraform init -backend=false
+        working-directory: environments/${{ matrix.environment }}
 
       - name: Terraform Validate
         run: terraform validate
+        working-directory: environments/${{ matrix.environment }}
 
-  # ─── Security Scan ───────────────────────────────────────────────────────────
+  # ─── Security Scan (both clouds) ─────────────────────────────────────────────
   security:
-    name: Security Scan
+    name: Security Scan (${{ matrix.environment }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [azure, aws]
+      fail-fast: false
 
     steps:
       - name: Checkout
@@ -52,12 +63,13 @@ jobs:
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
+          working_directory: environments/${{ matrix.environment }}
           soft_fail: false        # PR fails on HIGH or CRITICAL findings
 
       - name: Run checkov
         uses: bridgecrewio/checkov-action@v12
         with:
-          directory: .
+          directory: environments/${{ matrix.environment }}
           framework: terraform
           soft_fail: false
           quiet: true             # Only print failed checks

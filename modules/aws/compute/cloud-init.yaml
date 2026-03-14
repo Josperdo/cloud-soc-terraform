@@ -1,0 +1,122 @@
+#cloud-config
+# ─── AWS SOC Lab — VM First-Boot Hardening ───────────────────────────────────
+# Installs auditd (kernel-level event capture) and the CloudWatch Agent
+# (ships logs to CloudWatch Logs for GuardDuty/Security Hub correlation).
+# Also applies baseline SSH hardening.
+
+packages:
+  - auditd
+  - audispd-plugins
+
+# ─── Write configuration files ───────────────────────────────────────────────
+write_files:
+
+  # Audit rules — MITRE ATT&CK-mapped kernel-level events
+  - path: /etc/audit/rules.d/soc-lab.rules
+    owner: root:root
+    permissions: "0640"
+    content: |
+      # Delete existing rules
+      -D
+
+      # Increase kernel audit buffer size
+      -b 8192
+
+      # ── Privilege Escalation (T1548.003) ─────────────────────────────────
+      -w /etc/sudoers -p wa -k privilege_escalation
+      -w /etc/sudoers.d/ -p wa -k privilege_escalation
+
+      # ── Account Manipulation (T1098 / T1136.001) ──────────────────────────
+      -w /etc/passwd -p wa -k account_modification
+      -w /etc/shadow -p wa -k account_modification
+      -w /etc/group  -p wa -k account_modification
+      -w /etc/gshadow -p wa -k account_modification
+
+      # ── Persistence — Cron (T1053.003) ────────────────────────────────────
+      -w /etc/cron.d/       -p wa -k cron_persistence
+      -w /etc/cron.daily/   -p wa -k cron_persistence
+      -w /etc/cron.hourly/  -p wa -k cron_persistence
+      -w /etc/cron.monthly/ -p wa -k cron_persistence
+      -w /etc/cron.weekly/  -p wa -k cron_persistence
+      -w /var/spool/cron/   -p wa -k cron_persistence
+
+      # ── Persistence — Systemd (T1543.002) ─────────────────────────────────
+      -w /etc/systemd/system/ -p wa -k systemd_persistence
+      -w /usr/lib/systemd/system/ -p wa -k systemd_persistence
+
+      # ── Defense Evasion — SSH config tampering (T1098) ─────────────────────
+      -w /etc/ssh/sshd_config          -p wa -k ssh_config_change
+      -w /etc/ssh/sshd_config.d/       -p wa -k ssh_config_change
+
+      # ── Execution — Privileged command use ────────────────────────────────
+      -a always,exit -F path=/usr/bin/sudo  -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged_exec
+      -a always,exit -F path=/usr/bin/su    -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged_exec
+      -a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged_exec
+
+      # Make the ruleset immutable — requires reboot to change
+      -e 2
+
+  # audisp-syslog plugin — routes auditd events to syslog
+  - path: /etc/audit/plugins.d/syslog.conf
+    owner: root:root
+    permissions: "0640"
+    content: |
+      active = yes
+      direction = out
+      path = builtin_syslog
+      type = builtin
+      args = LOG_LOCAL6
+      format = string
+
+  # CloudWatch Agent config — ships syslog and auth logs to CloudWatch Logs
+  - path: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+    owner: root:root
+    permissions: "0644"
+    content: |
+      {
+        "logs": {
+          "logs_collected": {
+            "files": {
+              "collect_list": [
+                {
+                  "file_path": "/var/log/syslog",
+                  "log_group_name": "/soc-lab/syslog",
+                  "log_stream_name": "{instance_id}",
+                  "timestamp_format": "%b %d %H:%M:%S"
+                },
+                {
+                  "file_path": "/var/log/auth.log",
+                  "log_group_name": "/soc-lab/auth",
+                  "log_stream_name": "{instance_id}",
+                  "timestamp_format": "%b %d %H:%M:%S"
+                }
+              ]
+            }
+          }
+        }
+      }
+
+  # SSH hardening drop-in
+  - path: /etc/ssh/sshd_config.d/99-soc-hardening.conf
+    owner: root:root
+    permissions: "0600"
+    content: |
+      PermitRootLogin no
+      MaxAuthTries 3
+      LoginGraceTime 30
+      ClientAliveInterval 300
+      ClientAliveCountMax 2
+      AllowTcpForwarding no
+      X11Forwarding no
+
+# ─── Install SSM Agent, CloudWatch Agent, and enable services ────────────────
+runcmd:
+  - snap install amazon-ssm-agent --classic
+  - systemctl enable snap.amazon-ssm-agent.amazon-ssm-agent.service
+  - systemctl start snap.amazon-ssm-agent.amazon-ssm-agent.service
+  - curl -s https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb -o /tmp/cw-agent.deb
+  - dpkg -i /tmp/cw-agent.deb
+  - /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+  - systemctl enable auditd
+  - systemctl restart auditd
+  - systemctl restart ssh

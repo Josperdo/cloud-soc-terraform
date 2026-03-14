@@ -50,7 +50,7 @@ locals {
           query = join("\n", [
             "Syslog",
             "| where Facility in (\"auth\", \"authpriv\")",
-            "| where SyslogMessage has \"Failed password\"",
+            "| where SyslogMessage has_any (\"Failed password\", \"Invalid user\", \"Connection closed by invalid user\")",
             "| where TimeGenerated >= ago(24h)",
             "| summarize Attempts = count() by HostIP, bin(TimeGenerated, 1h)",
             "| order by TimeGenerated desc",

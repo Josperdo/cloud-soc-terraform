@@ -35,21 +35,21 @@ resource "azurerm_sentinel_alert_rule_scheduled" "ssh_brute_force" {
   name                       = "${var.prefix}-rule-ssh-brute-force"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.this.id
   display_name               = "SSH Brute Force Detected"
-  description                = "Five or more failed SSH authentication attempts from the same source IP within 5 minutes. Indicates a brute force or credential stuffing attack. Maps to T1110.001."
+  description                = "Five or more failed SSH authentication attempts from the same source IP within 30 minutes. Covers both password-auth failures and key-auth rejections (Invalid user). Maps to T1110.001."
   severity                   = "Medium"
   enabled                    = true
 
   query = <<-EOT
     Syslog
     | where Facility in ("auth", "authpriv")
-    | where SyslogMessage has "Failed password"
-    | summarize attempt_count = count() by HostIP, bin(TimeGenerated, 5m)
+    | where SyslogMessage has_any ("Failed password", "Invalid user", "Connection closed by invalid user")
+    | summarize attempt_count = count() by HostIP, bin(TimeGenerated, 30m)
     | where attempt_count >= 5
     | project TimeGenerated, HostIP, attempt_count
   EOT
 
   query_frequency   = "PT5M"
-  query_period      = "PT5M"
+  query_period      = "PT30M"
   trigger_operator  = "GreaterThan"
   trigger_threshold = 0
 
@@ -86,12 +86,12 @@ resource "azurerm_sentinel_alert_rule_scheduled" "sudo_group_add" {
   query = <<-EOT
     Syslog
     | where Facility == "authpriv"
-    | where SyslogMessage has_any ("to group sudo", "to group wheel", "added to group")
+    | where SyslogMessage has_any ("to group 'sudo'", "to group 'wheel'", "to group sudo", "to group wheel")
     | project TimeGenerated, Computer, HostIP, SyslogMessage
   EOT
 
   query_frequency   = "PT5M"
-  query_period      = "PT5M"
+  query_period      = "PT30M"
   trigger_operator  = "GreaterThan"
   trigger_threshold = 0
 
