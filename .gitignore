@@ -29,6 +29,10 @@ override.tf.json
 # Terraform plan output files
 *.tfplan
 
+# ─── Claude Code ─────────────────────────────────────────────────────────────
+
+.claude/
+
 # ─── OS / Editor ─────────────────────────────────────────────────────────────
 
 .DS_Store

@@ -69,6 +69,9 @@ resource "aws_key_pair" "this" {
 
 # ─── EC2 Instance ─────────────────────────────────────────────────────────────
 
+#checkov:skip=CKV_AWS_88:Public IP required for SSM agent outbound access — no NAT Gateway used to keep lab costs at zero. Security group denies all inbound traffic.
+#checkov:skip=CKV_AWS_135:t3.micro has EBS optimization always enabled by default — the attribute is not configurable on this instance family.
+#checkov:skip=CKV_AWS_126:Detailed EC2 monitoring adds ~$0.30/instance/month. Not required for a short-lived SOC lab.
 resource "aws_instance" "this" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type

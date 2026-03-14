@@ -1,5 +1,7 @@
 # ─── VPC ─────────────────────────────────────────────────────────────────────
 
+#checkov:skip=CKV2_AWS_11:VPC flow logging adds CloudWatch storage cost. Not required for this short-lived lab environment.
+#checkov:skip=CKV2_AWS_12:Default VPC security group is not managed by this module.
 resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -59,6 +61,7 @@ resource "aws_route_table_association" "management" {
 # No inbound SSH or RDP. SSM Session Manager provides shell access without
 # opening any ports. Outbound 443 allows the SSM agent to reach AWS endpoints.
 
+#checkov:skip=CKV2_AWS_5:Security group is attached to the EC2 instance in the compute module — checkov cannot resolve cross-module references.
 resource "aws_security_group" "management" {
   name        = "${var.prefix}-management-sg"
   description = "Management subnet - SSM access only, no inbound ports"
@@ -86,6 +89,8 @@ resource "aws_security_group" "management" {
 # ─── Security Group: Workload ─────────────────────────────────────────────────
 # Isolated subnet. Only accepts traffic from the management subnet.
 
+#checkov:skip=CKV2_AWS_5:Security group defined for future workload EC2 instances — checkov cannot resolve cross-module references.
+#checkov:skip=CKV_AWS_382:Outbound all-traffic intentional — workload subnet requires unrestricted egress for package updates and internal communication.
 resource "aws_security_group" "workload" {
   name        = "${var.prefix}-workload-sg"
   description = "Workload subnet - inbound from management only"
@@ -114,6 +119,7 @@ resource "aws_security_group" "workload" {
 # Stateless layer on top of the security group. Explicitly denies inbound
 # SSH/RDP from the internet as a second line of defence.
 
+#checkov:skip=CKV_AWS_231:Ephemeral port range (1024-65535) is required for return traffic. Port 3389 is explicitly denied at rule 210 — the deny takes precedence per NACL rule evaluation order.
 resource "aws_network_acl" "management" {
   vpc_id     = aws_vpc.this.id
   subnet_ids = [aws_subnet.management.id]
