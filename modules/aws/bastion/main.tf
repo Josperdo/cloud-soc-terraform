@@ -9,9 +9,9 @@
 #   - No S3 logging (avoids storage costs for a lab)
 #   - No KMS key (uses default SSM encryption — sufficient for a lab)
 
-#checkov:skip=CKV_AWS_112:SSM Session Manager encrypts sessions in transit using TLS by default. A KMS key provides additional envelope encryption which is not required for a lab.
-#checkov:skip=CKV_AWS_113:CloudWatch session logging IS enabled (cloudWatchStreamingEnabled=true). Checkov flags this because cloudWatchEncryptionEnabled=false — KMS encryption not required for a lab.
 resource "aws_ssm_document" "session_preferences" {
+  #checkov:skip=CKV_AWS_112:SSM Session Manager encrypts sessions in transit using TLS by default. A KMS key provides additional envelope encryption which is not required for a lab.
+  #checkov:skip=CKV_AWS_113:CloudWatch session logging IS enabled (cloudWatchStreamingEnabled=true). Checkov flags this because cloudWatchEncryptionEnabled=false — KMS encryption not required for a lab.
   name            = "SSM-SessionManagerRunShell"
   document_type   = "Session"
   document_format = "JSON"

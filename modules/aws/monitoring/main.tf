@@ -8,33 +8,33 @@ data "aws_caller_identity" "current" {}
 # Retention set to 30 days on all groups — prevents storage costs accumulating
 # after the lab is complete. Free Tier covers 5 GB/month ingestion + storage.
 
-#checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab. Adjust log_retention_days for longer investigations.
-#checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment uses default CloudWatch encryption which is sufficient.
 resource "aws_cloudwatch_log_group" "syslog" {
+  #checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab. Adjust log_retention_days for longer investigations.
+  #checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment uses default CloudWatch encryption which is sufficient.
   name              = "/soc-lab/syslog"
   retention_in_days = var.log_retention_days
   tags              = var.tags
 }
 
-#checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab.
-#checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment.
 resource "aws_cloudwatch_log_group" "auth" {
+  #checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab.
+  #checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment.
   name              = "/soc-lab/auth"
   retention_in_days = var.log_retention_days
   tags              = var.tags
 }
 
-#checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab.
-#checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment.
 resource "aws_cloudwatch_log_group" "ssm_sessions" {
+  #checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab.
+  #checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment.
   name              = "/soc-lab/ssm-sessions"
   retention_in_days = var.log_retention_days
   tags              = var.tags
 }
 
-#checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab.
-#checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment.
 resource "aws_cloudwatch_log_group" "cloudtrail" {
+  #checkov:skip=CKV_AWS_338:30-day retention intentional — keeps storage within Free Tier limits for a short-lived lab.
+  #checkov:skip=CKV_AWS_158:No customer-managed KMS key — lab environment.
   name              = "/soc-lab/cloudtrail"
   retention_in_days = var.log_retention_days
   tags              = var.tags
@@ -46,12 +46,12 @@ resource "aws_cloudwatch_log_group" "cloudtrail" {
 # First trail per region is free. Management events only — data events cost money.
 
 # S3 bucket — CloudTrail requires a bucket as its primary destination.
-#checkov:skip=CKV_AWS_144:No cross-region replication — single-region lab by design.
-#checkov:skip=CKV_AWS_21:No versioning — force_destroy is used for clean lab teardown; versioning would prevent bucket deletion.
-#checkov:skip=CKV_AWS_145:AES256 server-side encryption configured. KMS CMK adds $1/month per key — not justified for a lab.
-#checkov:skip=CKV_AWS_18:No access logging on the CloudTrail bucket — logging the log bucket creates recursive logging with no value.
-#checkov:skip=CKV2_AWS_62:No S3 event notifications required for a CloudTrail log archive bucket.
 resource "aws_s3_bucket" "cloudtrail" {
+  #checkov:skip=CKV_AWS_144:No cross-region replication — single-region lab by design.
+  #checkov:skip=CKV_AWS_21:No versioning — force_destroy is used for clean lab teardown; versioning would prevent bucket deletion.
+  #checkov:skip=CKV_AWS_145:AES256 server-side encryption configured. KMS CMK adds $1/month per key — not justified for a lab.
+  #checkov:skip=CKV_AWS_18:No access logging on the CloudTrail bucket — logging the log bucket creates recursive logging with no value.
+  #checkov:skip=CKV2_AWS_62:No S3 event notifications required for a CloudTrail log archive bucket.
   # Account ID suffix guarantees global uniqueness.
   bucket        = "${var.prefix}-cloudtrail-${data.aws_caller_identity.current.account_id}"
   force_destroy = true # Allows terraform destroy to remove the bucket even if logs exist.
@@ -167,10 +167,10 @@ resource "aws_iam_role_policy" "cloudtrail_cw" {
   })
 }
 
-#checkov:skip=CKV_AWS_67:Single-region trail intentional — multi-region trail logs to all regions, increasing CloudWatch and S3 costs for a lab scoped to one region.
-#checkov:skip=CKV_AWS_252:No SNS topic — real-time alerting via SNS is not required for a lab. CloudWatch dashboard provides visibility.
-#checkov:skip=CKV_AWS_35:No KMS CMK for CloudTrail — S3 AES256 encryption provides at-rest protection. KMS CMK adds $1/month per key.
 resource "aws_cloudtrail" "this" {
+  #checkov:skip=CKV_AWS_67:Single-region trail intentional — multi-region trail logs to all regions, increasing CloudWatch and S3 costs for a lab scoped to one region.
+  #checkov:skip=CKV_AWS_252:No SNS topic — real-time alerting via SNS is not required for a lab. CloudWatch dashboard provides visibility.
+  #checkov:skip=CKV_AWS_35:No KMS CMK for CloudTrail — S3 AES256 encryption provides at-rest protection. KMS CMK adds $1/month per key.
   name                          = "${var.prefix}-trail"
   s3_bucket_name                = aws_s3_bucket.cloudtrail.id
   cloud_watch_logs_group_arn    = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
@@ -198,8 +198,8 @@ resource "aws_cloudtrail" "this" {
 # logs for malicious activity. AWS equivalent of Microsoft Sentinel detections.
 # 30-day free trial — destroy before day 30 to avoid charges.
 
-#checkov:skip=CKV2_AWS_3:GuardDuty is conditionally enabled via count — checkov evaluates the disabled state when enable_threat_detection=false.
 resource "aws_guardduty_detector" "this" {
+  #checkov:skip=CKV2_AWS_3:GuardDuty is conditionally enabled via count — checkov evaluates the disabled state when enable_threat_detection=false.
   count  = var.enable_threat_detection ? 1 : 0
   enable = true
 
