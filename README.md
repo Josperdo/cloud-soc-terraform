@@ -1,6 +1,8 @@
 # Multi-Cloud SOC Lab — Infrastructure as Code
 
 ![Terraform CI](https://github.com/Josperdo/azure-soc-terraform/actions/workflows/terraform-ci.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Josperdo/azure-soc-terraform/blob/main/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Josperdo/azure-soc-terraform)](https://github.com/Josperdo/azure-soc-terraform/commits/main)
 
 Modular Terraform deployment for a multi-cloud Security Operations Center (SOC) lab environment spanning **Azure** and **AWS**. Built as a portfolio project demonstrating cloud security architecture, detection engineering, and DevSecOps practices across both major cloud platforms.
 
