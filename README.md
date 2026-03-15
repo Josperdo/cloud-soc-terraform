@@ -4,9 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Josperdo/azure-soc-terraform/blob/main/LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/Josperdo/azure-soc-terraform)](https://github.com/Josperdo/azure-soc-terraform/commits/main)
 
-Modular Terraform deployment for a multi-cloud Security Operations Center (SOC) lab environment spanning **Azure** and **AWS**. Built as a portfolio project demonstrating cloud security architecture, detection engineering, and DevSecOps practices across both major cloud platforms.
-
-A single Makefile pipeline deploys to either cloud:
+Modular Terraform deployment for a multi-cloud Security Operations Center (SOC) lab environment spanning **Azure** and **AWS**. Demonstrates cloud security architecture, detection engineering, and DevSecOps practices across both major cloud platforms.
 
 ```bash
 make deploy target=azure
@@ -15,55 +13,31 @@ make deploy target=aws
 
 ---
 
-## ⚠️ AWS Free Tier — Cost Warning
-
-Before deploying the AWS stack, read this. Several services have time-limited free trials that **begin the moment you run `terraform apply`**.
-
-| Service | Free Tier | What happens after |
-|---|---|---|
-| EC2 t3.micro | 750 hrs/month — **12 months only** | ~$8/month after year 1 |
-| GuardDuty | **30-day free trial** | Charged per GB analyzed |
-| Security Hub | **30-day free trial** | Charged per finding ingested |
-| CloudTrail (first trail) | Free — management events only | Data events are never free — don't enable them |
-| CloudWatch Logs | 5 GB/month ingestion + 5 GB storage | ~$0.50/GB after |
-| SSM Session Manager | Always free | — |
-
-**Recommended actions before deploying:**
-1. Set a billing alert: AWS Console → Billing → Budgets → Create budget ($5/month)
-2. Run `terraform destroy` immediately after capturing screenshots — don't leave resources idle
-3. Enable GuardDuty and Security Hub only after account activation (`enable_threat_detection = true` in `terraform.tfvars`)
-4. `terraform destroy` before day 30 if using GuardDuty/Security Hub on a free trial account
-
-> **New AWS account?** Account activation (credit card verification) can take up to 24 hours. GuardDuty and Security Hub require a fully activated account. Deploy with `enable_threat_detection = false` (the default) and flip it to `true` once activation completes.
-
----
-
 ## What This Deploys
 
 ### Azure Stack
 
-- **Isolated Virtual Network** — three segmented subnets with least-privilege NSG rules
-- **Azure Bastion** — browser-based SSH access with no public IP on any VM
-- **Ubuntu 22.04 LTS Workload VM** — hardened target for attack simulation
+- **Virtual Network** — three segmented subnets with least-privilege NSG rules
+- **Azure Bastion** — browser-based SSH with no public IP on any VM
+- **Ubuntu 22.04 LTS VM** — hardened target for attack simulation
 - **Log Analytics Workspace** — centralized syslog collection and KQL querying
-- **Microsoft Sentinel** — cloud-native SIEM with 10 scheduled analytics rules
-- **Detection Rules (KQL)** — 10 MITRE ATT&CK-mapped rules covering credential access, privilege escalation, persistence, defense evasion, and execution
-- **Data Collection Rule + Azure Monitor Agent** — automated log forwarding from VM to Sentinel using managed identity
-- **cloud-init hardening** — auditd + audisp-syslog installed on first boot; kernel audit rules mapped to MITRE ATT&CK techniques
-- **Least-privilege RBAC** — VM managed identity scoped to `Monitoring Metrics Publisher` on the workspace only
-- **Azure Policy guardrail** — `Allowed locations` built-in policy enforced at resource group scope
+- **Microsoft Sentinel** — cloud-native SIEM with 10 scheduled analytics rules mapped to MITRE ATT&CK
+- **Data Collection Rule + Azure Monitor Agent** — automated log forwarding via managed identity
+- **cloud-init hardening** — auditd + audisp-syslog with kernel audit rules on first boot
+- **Least-privilege RBAC** — VM managed identity scoped to `Monitoring Metrics Publisher` only
+- **Azure Policy guardrail** — `Allowed locations` enforced at resource group scope
 
 ### AWS Stack
 
-- **VPC + Subnets** — management (public-routed for SSM) and workload (isolated) subnets with Security Groups and NACLs
-- **SSM Session Manager** — shell access to EC2 with zero open inbound ports (no Bastion host required)
-- **Ubuntu 22.04 LTS EC2 Instance** — hardened target with IMDSv2 enforced, encrypted EBS, IAM Instance Profile
-- **CloudTrail** — account-level API activity logging to CloudWatch Logs + S3
+- **VPC + Subnets** — management and isolated workload subnets with Security Groups and NACLs
+- **SSM Session Manager** — shell access with zero open inbound ports
+- **Ubuntu 22.04 LTS EC2** — hardened target with IMDSv2 enforced, encrypted EBS, IAM Instance Profile
+- **CloudTrail** — account-level API logging to CloudWatch Logs + S3
 - **CloudWatch Log Groups** — `/soc-lab/syslog`, `/soc-lab/auth`, `/soc-lab/ssm-sessions`, `/soc-lab/cloudtrail`
-- **CloudWatch Dashboard** — SOC visibility panel showing auth events, syslog, SSM sessions, and API activity
+- **CloudWatch Dashboard** — SOC visibility panel for auth events, syslog, SSM sessions, and API activity
 - **GuardDuty** *(optional — 30-day trial)* — threat detection across CloudTrail, VPC Flow Logs, and DNS
-- **Security Hub** *(optional — 30-day trial)* — aggregated findings with AWS Foundational Security Best Practices standard
-- **cloud-init hardening** — same auditd ruleset as Azure, CloudWatch Agent ships logs on first boot
+- **Security Hub** *(optional — 30-day trial)* — aggregated findings with AWS Foundational Security Best Practices
+- **cloud-init hardening** — same auditd ruleset as Azure; CloudWatch Agent ships logs on first boot
 
 ---
 
@@ -113,7 +87,6 @@ Internet
 │                                                       │
 │  ┌──────────────────────────────────────────────────┐ │
 │  │  management-subnet  10.0.1.0/24                  │ │
-│  │                                                  │ │
 │  │  [Ubuntu 22.04 LTS EC2]                          │ │
 │  │  - IAM Instance Profile (SSM + CloudWatch)       │ │
 │  │  - IMDSv2 enforced                               │ │
@@ -153,7 +126,7 @@ Internet
 | SIEM / threat detection | Microsoft Sentinel | GuardDuty + Security Hub |
 | API activity logging | Azure Activity Log + Diagnostic Settings | CloudTrail |
 | Guardrails | Azure Policy | AWS Config / Security Hub standards |
-| CI/CD scanning | tfsec + checkov | tfsec + checkov (same tools) |
+| CI/CD scanning | tfsec + checkov | tfsec + checkov |
 
 ---
 
@@ -193,19 +166,14 @@ Internet
 | Terraform >= 1.5.0 | Same installation as above |
 | AWS CLI v2 | [Install](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) |
 | AWS Account | Free Tier covers all lab resources for 12 months |
-| IAM User | Create a non-root IAM user with `AdministratorAccess` — never use root for CLI |
+| IAM User | Non-root IAM user with `AdministratorAccess` — never use root for CLI |
 
 ### Makefile (optional but recommended)
 
 ```bash
-# Windows
-winget install GnuWin32.Make
-
-# macOS
-brew install make
-
-# Linux
-sudo apt install make
+winget install GnuWin32.Make   # Windows
+brew install make              # macOS
+sudo apt install make          # Linux
 ```
 
 ---
@@ -249,16 +217,15 @@ ssh-keygen -t rsa -b 4096 -f ~/.ssh/aws_soc_key
 # 3. Configure variables
 cd environments/aws
 cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars — set admin_ssh_public_key
 # Set enable_threat_detection = true once your account is fully activated
 
 # 4. Deploy
 make deploy target=aws
 
-# 5. Connect via SSM Session Manager (no open ports required)
+# 5. Connect via SSM (no open ports required)
 aws ssm start-session --target <instance-id> --region us-east-1
 
-# 6. Tear down — do this before day 30 if GuardDuty/Security Hub are enabled
+# 6. Tear down — run before day 30 if GuardDuty/Security Hub are enabled
 make destroy target=aws
 ```
 
@@ -312,7 +279,7 @@ make destroy target=aws
 | CloudWatch Logs | 5 GB/month | ~$0.50/GB |
 | SSM Session Manager | Always free | Free |
 
-> AWS lab costs are **near zero** within Free Tier limits. Set a $5/month billing alert and run `terraform destroy` after each session.
+> AWS lab costs are **near zero** within Free Tier limits. Set a $5/month billing alert in AWS Budgets and run `terraform destroy` after each session. If using GuardDuty or Security Hub, destroy before day 30 on new accounts.
 
 ---
 
@@ -332,22 +299,11 @@ Your account isn't fully activated yet. Credit card verification can take up to 
 
 **AWS: `TargetNotConnected` when running SSM start-session**
 
-The SSM agent installs via cloud-init on first boot — wait 3–4 minutes after `terraform apply` completes before connecting. Check EC2 → Instance → Status Checks shows 2/2 passed first.
+The SSM agent installs via cloud-init on first boot — wait 3–4 minutes after `terraform apply` completes. Confirm EC2 Status Checks shows 2/2 passed before connecting.
 
 **General: `terraform apply` fails partway through**
 
 Re-run `terraform apply` — Terraform skips what already exists and only retries what failed. Most mid-deploy failures are transient API timing issues that resolve on retry.
-
----
-
-## Project Status
-
-| Phase | Description | Status |
-|---|---|---|
-| Phase 1 | Azure core infrastructure — VNet, Bastion, VM, Sentinel, AMA | Complete |
-| Phase 2 | Detection engineering — KQL rules, attack simulation, evidence collection | Complete |
-| Phase 3 | CI/CD pipeline — GitHub Actions, tfsec, checkov | Complete |
-| Phase 4 | Multi-cloud expansion — AWS equivalent stack, Makefile pipeline | Complete |
 
 ---
 
